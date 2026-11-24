@@ -1,58 +1,136 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Tax Autopilot
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A pre-accounting workspace for reviewing invoices, managing journal proposals, and looking up tax policy sources. Built with Laravel, React, and Inertia, with an explicit human approval step before an invoice is marked as posted.
 
-## About Laravel
+## Current features
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- Dashboard showing document activity, pending approvals, and VAT totals.
+- PDF, JPG, and PNG invoice uploads up to 10 MB, with document previews when the stored file is available.
+- Invoice review pages with line items, totals, and processing states.
+- Rule-based account suggestions and journal proposal review.
+- Human approval or rejection, including reviewer details, timestamps, and rejection notes. Approval decisions use transactions and row locks to prevent resolving a proposal twice.
+- Knowledge library for policy excerpts and source references.
+- Tax Copilot drawer with keyword lookup across source excerpts available on the current page.
+- Registration, login, logout, password recovery, profile updates, and password visibility controls.
+- Local-only **Quick demo login** that fills the demo credentials; the user clicks **Log in** to submit.
+- Repeatable seeders for a demo organization, chart of accounts, invoices, approval history, and knowledge sources.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Implementation status
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+This repository currently implements the review workflow and a seeded demonstration workspace. Uploaded documents are stored with a `queued` status; automated extraction is not connected. Journal suggestions use vendor-name rules rather than a model call.
 
-## Learning Laravel
+The Laravel AI SDK is configured to use DeepSeek for text generation by default. Tax Copilot currently performs keyword lookup and displays source excerpts; it does not yet generate AI answers. Approval marks invoices as posted inside this application; no external accounting integration is connected.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## Stack
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+| Layer | Technology |
+| --- | --- |
+| Backend | PHP 8.3+, Laravel 13 |
+| Frontend | React 18, TypeScript, Inertia.js 2 |
+| UI | Tailwind CSS 3, Radix UI, Lucide icons |
+| Build | Vite 8 |
+| AI integration | Laravel AI SDK, DeepSeek text provider |
+| Database | SQLite by default |
+| Testing and formatting | Pest 4, Laravel Pint |
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+## Local setup
 
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+Requirements: PHP 8.3 or newer with Laravel's required extensions and PDO SQLite, Composer, and Node.js 20.19+ or 22.12+ with npm.
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+git clone https://github.com/mhannan-dev/TAX_AI.git
+cd TAX_AI
+composer run setup
+php artisan db:seed --no-interaction
+php artisan storage:link
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+`composer run setup` installs PHP and JavaScript dependencies, creates `.env` if missing, generates the application key, runs migrations, and builds the frontend. The default environment uses SQLite and database-backed sessions, cache, and queues. If using another database, configure its connection in `.env` before running setup.
 
-## Contributing
+Start the development processes:
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```bash
+composer run dev
+```
 
-## Code of Conduct
+Alternatively, run the backend and frontend in separate terminals:
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```bash
+php artisan serve
+```
 
-## Security Vulnerabilities
+```bash
+npm run dev
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Open the application address printed by the backend server. Seed the demo workspace before exploring the invoice and approval screens.
 
-## License
+## Demo login
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+The demo seeder creates this development account:
+
+| Field | Value |
+| --- | --- |
+| Email | `admin@yopmail.com` |
+| Password | `password` |
+
+With `APP_ENV=local`, click **Quick demo login** on the login page to fill both fields, then click **Log in**. The button does not submit the form or bypass password validation. Demo credentials are not supplied to the login page outside the local environment.
+
+Seeders preserve existing records. Re-seeding will not reset an existing user's changed password or overwrite approval decisions. These public demo credentials are intended for a disposable local workspace.
+
+## DeepSeek configuration
+
+Set `DEEPSEEK_API_KEY` in your local `.env` or the deployment environment's secret settings. Keep real keys out of source control and frontend variables.
+
+The text provider defaults to DeepSeek in `config/ai.php`. Optional environment settings are:
+
+```dotenv
+AI_DEFAULT_PROVIDER=deepseek
+DEEPSEEK_BASE_URL=https://api.deepseek.com
+```
+
+After changing environment settings, clear cached configuration:
+
+```bash
+php artisan config:clear
+```
+
+The demo review workflow and source lookup can run without an API key because they do not currently call an AI provider. Image, audio, embedding, and other provider defaults are configured separately from text generation.
+
+## Verification
+
+Run the PHP test suite:
+
+```bash
+php artisan test --compact
+```
+
+Run focused authentication and workflow checks:
+
+```bash
+php artisan test --compact tests/Feature/Auth
+php artisan test --compact tests/Feature/WorkflowTest.php
+```
+
+Check TypeScript and build frontend assets:
+
+```bash
+npm run build
+```
+
+Format changed PHP files:
+
+```bash
+php vendor/bin/pint --dirty --format agent
+```
+
+## Project layout
+
+- `app/Http/Controllers` — authentication and workflow endpoints.
+- `app/Actions` and `app/Data` — approval operations and structured decision input.
+- `app/Models` — users, organizations, invoices, accounts, approvals, and knowledge chunks.
+- `resources/js/Pages` — Inertia pages.
+- `resources/js/Components` — shared UI and workflow components.
+- `database/seeders` — repeatable demo workspace setup.
+- `config/ai.php` — AI provider configuration.
+- `tests/Feature` — authentication, profile, seeding, and workflow regression tests.
